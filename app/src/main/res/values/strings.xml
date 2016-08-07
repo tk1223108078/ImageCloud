@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">ImageCloud</string>
+
+    <string name="tab1_main_text">本地</string>
+    <string name="tab2_main_text">云端</string>
+    <string name="tab3_main_text">我</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

@@ -1,0 +1,20 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="site.taokai.imagecloud.ui.fragment.LocalMainFragment">
+    <GridView
+        android:id="@+id/local_main_fragment_imageviewlist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnWidth="100dip"
+        android:stretchMode="columnWidth"
+        android:numColumns="auto_fit"
+        android:verticalSpacing="1dip"
+        android:horizontalSpacing="1dip"
+        android:gravity="center"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true">
+    </GridView>
+</FrameLayout>
