@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fresco="http://schemas.android.com/apk/res-auto"
     android:id="@+id/griditem"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content">
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/ItemImage"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
         android:layout_centerInParent="true"
-        />
+        fresco:placeholderImage="@drawable/icon_placeholder"
+        fresco:placeholderImageScaleType="fitCenter"
+        fresco:progressBarAutoRotateInterval="5000"
+        fresco:failureImage="@drawable/icon_failure"
+        fresco:failureImageScaleType="centerInside" />
     <CheckBox
         android:id="@+id/ItemCheckBox"
         android:layout_width="wrap_content"

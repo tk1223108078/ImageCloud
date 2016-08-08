@@ -2,19 +2,35 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="site.taokai.imagecloud.ui.fragment.LocalMainFragment">
     <GridView
         android:id="@+id/local_main_fragment_imageviewlist"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnWidth="100dip"
+        android:layout_height="match_parent"
         android:stretchMode="columnWidth"
-        android:numColumns="auto_fit"
-        android:verticalSpacing="1dip"
-        android:horizontalSpacing="1dip"
+        android:numColumns="3"
+        android:verticalSpacing="2dp"
+        android:horizontalSpacing="2dp"
         android:gravity="center"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:visibility="visible">
     </GridView>
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/local_main_fragment_imageview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+    <android.support.design.widget.FloatingActionButton
+        app:rippleColor="#56abe4"
+        app:backgroundTint="#56abe4"
+        android:id="@+id/local_main_fragment_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="60dp"
+        android:src="@drawable/floatbutton"/>
 </FrameLayout>
