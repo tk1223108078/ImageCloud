@@ -2,18 +2,22 @@ package site.taokai.imagecloud.db;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.view.MotionEvent;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+
+import site.taokai.imagecloud.base.ImageCloud;
 
 /**
  * Created by 95 on 2016/8/7.
  */
-public class GetLocalImageCursorTask extends AsyncTask<Object, Object, Object> {
+public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> {
     private Context mContext;
     private final ContentResolver mContentResolver;
     private boolean mExitTasksEarly = false;//退出任务线程的标志位
@@ -66,10 +70,13 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Object, Object> {
         // 遍历数据库
         int columnIndexID = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
         int columnIndexSize = c.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE);
+        int i = 0;
         while (c.moveToNext() && !mExitTasksEarly){
             // 填充Uri列表
             long imagId = c.getLong(columnIndexID);
             ImageUriList.add(Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(imagId)));
+            publishProgress(i);
+            i++;
         }
         c.close();
         // 早退出了清空列表
@@ -97,6 +104,11 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Object, Object> {
         mExitTasksEarly = true;
     }
 
+    @Override
+    protected void onProgressUpdate(Integer... value) {
+        Toast.makeText(ImageCloud.getmAppContext(), ""+value, Toast.LENGTH_SHORT).show();
+    }
+
 //    private String GetThumbnailPath(long imgaId){
 //        mContentResolver.query(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, )
 //    }
@@ -113,5 +125,12 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Object, Object> {
     // 接口
     public interface OnLoadImageListInterface {
         public void OnLoadImageList(ArrayList<Uri> ImageUriList, ArrayList<String> ImagePathList);
+    }
+
+    class GetLocalImageCursorTask1 extends AsyncTask<String, Integer, String>{
+        @Override
+        protected String doInBackground(String... params) {
+            return null;
+        }
     }
 }

@@ -33,6 +33,16 @@ public class LocalImageListAdapter extends BaseAdapter {
     private GridView mGridView;
     private View mView;
 
+    public ArrayList<Uri> GetSelectList(){
+        ArrayList<Uri> list = new ArrayList<>();
+        for (int i = 0; i < mImageUriList.size(); i++){
+            if (mSelectImageList.get(i) == true){
+                list.add(mImageUriList.get(i));
+            }
+        }
+        return list;
+    }
+
     // 记录选中的项
     private ArrayList<Boolean> mSelectImageList = new ArrayList<>();
 

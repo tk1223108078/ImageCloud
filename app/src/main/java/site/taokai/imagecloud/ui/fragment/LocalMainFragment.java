@@ -1,8 +1,12 @@
 package site.taokai.imagecloud.ui.fragment;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.view.GestureDetector;
@@ -19,6 +23,7 @@ import android.widget.Toast;
 
 import com.facebook.drawee.view.SimpleDraweeView;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import site.taokai.imagecloud.R;
@@ -129,10 +134,81 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
                 Toast.makeText(getActivity(), "upload", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.local_menu_delete:
-                Toast.makeText(getActivity(), "delete", Toast.LENGTH_SHORT).show();
+                mList = mImageAdapter.GetSelectList();
+                backgroundDeleteImageList();
                 break;
         }
         return true;
+    }
+    private  ArrayList<Uri> mList;
+
+    private Handler mHandler = new Handler();
+    // 批量删除图片(包括删除数据库中的数据和实际文件)
+    private void backgroundDeleteImageList(){
+        Thread thread = new Thread(null, doBackgroundDeleteFileThreadPrrocessing, "BackgroudDeleteImage");
+        thread.start();
+    }
+
+    private int nCurrent = 0;
+    private int nTotal = 0;
+    // 执行后台处理方法的Runnable.
+    private Runnable doBackgroundDeleteFileThreadPrrocessing = new Runnable() {
+        @Override
+        public void run() {
+            DeleteImageList(mList);
+        }
+    };
+
+    // 删除image文件
+    private void DeleteImageList(ArrayList<Uri> mList){
+        nTotal = mList.size();
+        for (int i = 0; i < mList.size(); i++){
+            nCurrent = i;
+            File file = new File(getRealFilePath(getActivity(), mList.get(i)));
+            file.delete();
+            mHandler.post(doUpdateUI);
+        }
+    }
+
+    private Runnable doUpdateUI = new Runnable() {
+        @Override
+        public void run() {
+            UpdateDeleteUI(nCurrent, nTotal);
+        }
+    };
+
+    private void UpdateDeleteUI(int nCurrent, int nTotal){
+        if (nCurrent == nTotal){
+            Toast.makeText(getActivity(), "总共删除了"+nTotal, Toast.LENGTH_SHORT).show();
+            GetLocalImageCursorTask localImageCursorTask = new GetLocalImageCursorTask(ImageCloud.getmAppContext(), 0);
+            localImageCursorTask.setOnGetImageListInterface(this);
+            localImageCursorTask.execute();
+        }else {
+            Toast.makeText(getActivity(), "当前删除了"+ nCurrent+",总共"+nTotal, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public static String getRealFilePath( final Context context, final Uri uri ) {
+        if ( null == uri ) return null;
+        final String scheme = uri.getScheme();
+        String data = null;
+        if ( scheme == null )
+            data = uri.getPath();
+        else if ( ContentResolver.SCHEME_FILE.equals( scheme ) ) {
+            data = uri.getPath();
+        } else if ( ContentResolver.SCHEME_CONTENT.equals( scheme ) ) {
+            Cursor cursor = context.getContentResolver().query( uri, new String[] { MediaStore.Images.ImageColumns.DATA }, null, null, null );
+            if ( null != cursor ) {
+                if ( cursor.moveToFirst() ) {
+                    int index = cursor.getColumnIndex( MediaStore.Images.ImageColumns.DATA );
+                    if ( index > -1 ) {
+                        data = cursor.getString( index );
+                    }
+                }
+                cursor.close();
+            }
+        }
+        return data;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
