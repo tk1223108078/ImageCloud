@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import site.taokai.imagecloud.base.ImageCloud;
@@ -74,7 +75,12 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
         while (c.moveToNext() && !mExitTasksEarly){
             // 填充Uri列表
             long imagId = c.getLong(columnIndexID);
-            ImageUriList.add(Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(imagId)));
+            Uri uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(imagId));
+            File file = new File(getRealFilePath(ImageCloud.getmAppContext(), uri));
+            // 文件存在才插入
+            if (file.exists()){
+                ImageUriList.add(uri);
+            }
             publishProgress(i);
             i++;
         }
@@ -84,6 +90,29 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
             ImageUriList.clear();
             ImageUrlThumbnailList.clear();
         }
+    }
+
+    public static String getRealFilePath( final Context context, final Uri uri ) {
+        if ( null == uri ) return null;
+        final String scheme = uri.getScheme();
+        String data = null;
+        if ( scheme == null )
+            data = uri.getPath();
+        else if ( ContentResolver.SCHEME_FILE.equals( scheme ) ) {
+            data = uri.getPath();
+        } else if ( ContentResolver.SCHEME_CONTENT.equals( scheme ) ) {
+            Cursor cursor = context.getContentResolver().query( uri, new String[] { MediaStore.Images.ImageColumns.DATA }, null, null, null );
+            if ( null != cursor ) {
+                if ( cursor.moveToFirst() ) {
+                    int index = cursor.getColumnIndex( MediaStore.Images.ImageColumns.DATA );
+                    if ( index > -1 ) {
+                        data = cursor.getString( index );
+                    }
+                }
+                cursor.close();
+            }
+        }
+        return data;
     }
 
     // 退出
@@ -106,7 +135,7 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
 
     @Override
     protected void onProgressUpdate(Integer... value) {
-        Toast.makeText(ImageCloud.getmAppContext(), ""+value, Toast.LENGTH_SHORT).show();
+       //  Toast.makeText(ImageCloud.getmAppContext(), ""+value, Toast.LENGTH_SHORT).show();
     }
 
 //    private String GetThumbnailPath(long imgaId){

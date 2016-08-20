@@ -7,21 +7,17 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.support.design.widget.FloatingActionButton;
+import com.github.clans.fab.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.view.GestureDetector;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
-import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import com.facebook.drawee.view.SimpleDraweeView;
+import com.github.clans.fab.FloatingActionMenu;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,8 +26,6 @@ import site.taokai.imagecloud.R;
 import site.taokai.imagecloud.adapter.LocalImageListAdapter;
 import site.taokai.imagecloud.base.ImageCloud;
 import site.taokai.imagecloud.db.GetLocalImageCursorTask;
-import site.taokai.imagecloud.ui.activity.MainActivity;
-import site.taokai.imagecloud.utils.utillog;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -42,7 +36,7 @@ import site.taokai.imagecloud.utils.utillog;
  * create an instance of this fragment.
  */
 public class LocalMainFragment extends Fragment implements View.OnClickListener,GetLocalImageCursorTask.OnLoadImageListInterface,
-        View.OnTouchListener, GestureDetector.OnGestureListener, PopupMenu.OnMenuItemClickListener {
+        SwipeRefreshLayout.OnRefreshListener {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -59,11 +53,11 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
     // view
     private GridView mGridImageView;
     private com.facebook.drawee.view.SimpleDraweeView mImageView;
-    private FloatingActionButton mFloateButton;
-
-    // menu
-    PopupMenu mPopupMenu;
-    Menu mMenu;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private FloatingActionButton mLocalFloatMenuBtnDelete;
+    private FloatingActionButton mLocalFloatMenuBtnUpload;
+    private FloatingActionButton mLocalFloatMenuBtnTop;
+    private FloatingActionMenu  mLocalFloatMenu;
 
     public LocalMainFragment() {
         // Required empty public constructor
@@ -103,17 +97,25 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
         View view = inflater.inflate(R.layout.fragment_local_main, container, false);
         mGridImageView = (GridView)view.findViewById(R.id.local_main_fragment_imageviewlist);
         mImageView = (SimpleDraweeView) view.findViewById(R.id.local_main_fragment_imageview);
-        mFloateButton = (FloatingActionButton)view.findViewById(R.id.local_main_fragment_fab);
-        mFloateButton.setOnClickListener(this);
-        // 启动图片获取所有本机图片
-        GetLocalImageCursorTask localImageCursorTask = new GetLocalImageCursorTask(ImageCloud.getmAppContext(), 0);
-        localImageCursorTask.setOnGetImageListInterface(this);
-        localImageCursorTask.execute();
-        mPopupMenu = new PopupMenu(getActivity(), view.findViewById(R.id.local_main_fragment_fab));
-        mMenu = mPopupMenu.getMenu();
-        MenuInflater menuInflater = getActivity().getMenuInflater();
-        menuInflater.inflate(R.menu.menu_local_popmenu, mMenu);
-        mPopupMenu.setOnMenuItemClickListener(this);
+
+        // 刷新控件
+        mSwipeRefreshLayout = (SwipeRefreshLayout)view.findViewById(R.id.swipe_container);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+        // 刷新时的颜色变化
+        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light, android.R.color.holo_orange_light);
+
+        // 悬浮按钮菜单
+        mLocalFloatMenuBtnDelete = (FloatingActionButton)view.findViewById(R.id.local_fab_menu_item_delete);
+        mLocalFloatMenuBtnUpload = (FloatingActionButton)view.findViewById(R.id.local_fab_menu_item_upload);
+        mLocalFloatMenuBtnTop = (FloatingActionButton)view.findViewById(R.id.local_fab_menu_item_top);
+        mLocalFloatMenu = (FloatingActionMenu)view.findViewById(R.id.local_fab_menu);
+        mLocalFloatMenuBtnDelete.setOnClickListener(this);
+        mLocalFloatMenuBtnUpload.setOnClickListener(this);
+        mLocalFloatMenuBtnTop.setOnClickListener(this);
+
+        // 加载图片
+        this.onRefresh();
         return view;
     }
 
@@ -121,25 +123,24 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
     @Override
     public void onClick(View v) {
         switch (v.getId()){
-            case R.id.local_main_fragment_fab:
-                mPopupMenu.show();
+            case R.id.local_fab_menu_item_delete:
+                mList =  mImageAdapter.GetSelectList();
+                backgroundDeleteImageList();
+                mLocalFloatMenu.close(true);
+                onRefresh();
+                break;
+            case R.id.local_fab_menu_item_upload:
+                mLocalFloatMenu.close(true);
+                break;
+            case R.id.local_fab_menu_item_top:
+                if (mImageAdapter.getCount() > 0){
+                    mGridImageView.setSelection(0);
+                }
+                mLocalFloatMenu.close(true);
                 break;
         }
     }
 
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.local_menu_upload:
-                Toast.makeText(getActivity(), "upload", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.local_menu_delete:
-                mList = mImageAdapter.GetSelectList();
-                backgroundDeleteImageList();
-                break;
-        }
-        return true;
-    }
     private  ArrayList<Uri> mList;
 
     private Handler mHandler = new Handler();
@@ -162,6 +163,10 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
     // 删除image文件
     private void DeleteImageList(ArrayList<Uri> mList){
         nTotal = mList.size();
+        if(mList.size() == 0){
+            nTotal = nCurrent = 0;
+            mHandler.post(doUpdateUI);
+        }
         for (int i = 0; i < mList.size(); i++){
             nCurrent = i;
             File file = new File(getRealFilePath(getActivity(), mList.get(i)));
@@ -178,13 +183,10 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
     };
 
     private void UpdateDeleteUI(int nCurrent, int nTotal){
-        if (nCurrent == nTotal){
-            Toast.makeText(getActivity(), "总共删除了"+nTotal, Toast.LENGTH_SHORT).show();
-            GetLocalImageCursorTask localImageCursorTask = new GetLocalImageCursorTask(ImageCloud.getmAppContext(), 0);
-            localImageCursorTask.setOnGetImageListInterface(this);
-            localImageCursorTask.execute();
-        }else {
-            Toast.makeText(getActivity(), "当前删除了"+ nCurrent+",总共"+nTotal, Toast.LENGTH_SHORT).show();
+        if (nCurrent == nTotal && nTotal != 0){
+            Toast.makeText(getActivity().getApplicationContext(), "已经删除所有选中的"+ nTotal+"张图片", Toast.LENGTH_SHORT).show();
+        }else if (nTotal == 0) {
+            Toast.makeText(getActivity().getApplicationContext(), "当前未选中图片", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -246,45 +248,17 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
     public void OnLoadImageList(ArrayList<Uri> ImageUriList, ArrayList<String> ImageThumbliList){
         // mImageView.setImageURI(ImageUriList.get(0));
         GridViewLoadImages(ImageUriList, ImageThumbliList);
+        // 加载图片的时候应该停止刷新了
+        mSwipeRefreshLayout.setRefreshing(false);
     }
 
-
+    // 刷新
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        utillog.utilloginfo("touch");
-        return true;
-    }
-
-    @Override
-    public boolean onDown(MotionEvent e) {
-        utillog.utilloginfo("下滑");
-        return false;
-    }
-
-    @Override
-    public void onShowPress(MotionEvent e) {
-
-    }
-
-    @Override
-    public boolean onSingleTapUp(MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        return false;
-    }
-
-    @Override
-    public void onLongPress(MotionEvent e) {
-
-    }
-
-    @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        utillog.utilloginfo("上滑");
-        return false;
+    public void onRefresh() {
+        // 启动图片获取所有本机图片
+        GetLocalImageCursorTask localImageCursorTask = new GetLocalImageCursorTask(ImageCloud.getmAppContext(), 0);
+        localImageCursorTask.setOnGetImageListInterface(this);
+        localImageCursorTask.execute();
     }
 
     /**

@@ -41,3 +41,6 @@ dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
     compile 'pl.droidsonroids.gif:android-gif-drawable:1.1.17'
 }
+dependencies {
+    compile 'com.github.clans:fab:1.6.4'
+}
