@@ -10,10 +10,12 @@ import android.provider.MediaStore;
 import com.github.clans.fab.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.facebook.drawee.view.SimpleDraweeView;
@@ -52,6 +54,7 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
 
     // view
     private GridView mGridImageView;
+    private ImageView mImageLocalPopMenuBack;
     private com.facebook.drawee.view.SimpleDraweeView mImageView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private FloatingActionButton mLocalFloatMenuBtnDelete;
@@ -110,13 +113,45 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
         mLocalFloatMenuBtnUpload = (FloatingActionButton)view.findViewById(R.id.local_fab_menu_item_upload);
         mLocalFloatMenuBtnTop = (FloatingActionButton)view.findViewById(R.id.local_fab_menu_item_top);
         mLocalFloatMenu = (FloatingActionMenu)view.findViewById(R.id.local_fab_menu);
+        mImageLocalPopMenuBack = (ImageView)view.findViewById(R.id.local_popmenu_back);
+
+        return view;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        // 设置事件
         mLocalFloatMenuBtnDelete.setOnClickListener(this);
         mLocalFloatMenuBtnUpload.setOnClickListener(this);
         mLocalFloatMenuBtnTop.setOnClickListener(this);
+        mImageLocalPopMenuBack.setOnClickListener(this);
+
+        mLocalFloatMenu.setClosedOnTouchOutside(true);
+        mLocalFloatMenu.setOnMenuToggleListener(new FloatingActionMenu.OnMenuToggleListener() {
+            @Override
+            public void onMenuToggle(boolean opened) {
+                if (opened) {
+                    // fade in dim layout under the floating buttons
+                    mImageLocalPopMenuBack.bringToFront();
+                    mLocalFloatMenu.bringToFront();
+                    mImageLocalPopMenuBack.setVisibility(View.VISIBLE);
+                } else {
+                    mImageLocalPopMenuBack.setVisibility(View.GONE);
+                }
+            }
+        });
+
 
         // 加载图片
         this.onRefresh();
-        return view;
+    }
+
+    public void GoToTop(){
+        if (mImageAdapter.getCount() > 0){
+            mGridImageView.setSelection(0);
+        }
     }
 
     // 点击事件
@@ -126,19 +161,30 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
             case R.id.local_fab_menu_item_delete:
                 mList =  mImageAdapter.GetSelectList();
                 backgroundDeleteImageList();
-                mLocalFloatMenu.close(true);
+                FloatMenuClose();
                 onRefresh();
                 break;
             case R.id.local_fab_menu_item_upload:
-                mLocalFloatMenu.close(true);
+                FloatMenuClose();
                 break;
             case R.id.local_fab_menu_item_top:
-                if (mImageAdapter.getCount() > 0){
-                    mGridImageView.setSelection(0);
+                GoToTop();
+                FloatMenuClose();
+                break;
+            case R.id.local_fab_menu:
+                break;
+            case R.id.local_popmenu_back:
+                // 处于点开状态时关掉背景和菜单
+                if (mLocalFloatMenu.isOpened()){
+                    FloatMenuClose();
                 }
-                mLocalFloatMenu.close(true);
                 break;
         }
+    }
+
+    private void FloatMenuClose(){
+        mImageLocalPopMenuBack.setVisibility(View.GONE);
+        mLocalFloatMenu.close(true);
     }
 
     private  ArrayList<Uri> mList;
@@ -239,13 +285,13 @@ public class LocalMainFragment extends Fragment implements View.OnClickListener,
 
     // gridview加载图片
     private LocalImageListAdapter mImageAdapter;
-    void GridViewLoadImages(ArrayList<Uri> strImageUriList, ArrayList<String> ImageThumbliList){
+    void GridViewLoadImages(ArrayList<Uri> strImageUriList, ArrayList<Uri> ImageThumbliList){
         mImageAdapter = new LocalImageListAdapter(this.getActivity(), mGridImageView, strImageUriList, ImageThumbliList);
         mGridImageView.setAdapter(mImageAdapter);
     }
     // 加载图片
     @Override
-    public void OnLoadImageList(ArrayList<Uri> ImageUriList, ArrayList<String> ImageThumbliList){
+    public void OnLoadImageList(ArrayList<Uri> ImageUriList, ArrayList<Uri> ImageThumbliList){
         // mImageView.setImageURI(ImageUriList.get(0));
         GridViewLoadImages(ImageUriList, ImageThumbliList);
         // 加载图片的时候应该停止刷新了

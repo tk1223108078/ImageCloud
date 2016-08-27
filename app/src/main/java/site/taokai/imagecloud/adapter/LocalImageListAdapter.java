@@ -29,7 +29,7 @@ import site.taokai.imagecloud.utils.utillog;
 public class LocalImageListAdapter extends BaseAdapter {
     private Context mContext;
     private ArrayList<Uri> mImageUriList = new ArrayList<>();
-    private ArrayList<String> mImageThumbliList = new ArrayList<>();
+    private ArrayList<Uri> mImageThumbliList = new ArrayList<>();
     private GridView mGridView;
     private View mView;
 
@@ -46,7 +46,7 @@ public class LocalImageListAdapter extends BaseAdapter {
     // 记录选中的项
     private ArrayList<Boolean> mSelectImageList = new ArrayList<>();
 
-    public LocalImageListAdapter(Context context, GridView gridView, ArrayList<Uri> imageUriList, ArrayList<String> imageThumbliList){
+    public LocalImageListAdapter(Context context, GridView gridView, ArrayList<Uri> imageUriList, ArrayList<Uri> imageThumbliList){
         this.mContext = context;
         this.mGridView = gridView;
         this.mImageUriList = imageUriList;
@@ -84,14 +84,21 @@ public class LocalImageListAdapter extends BaseAdapter {
                 mSelectImageList.set(position, isChecked);
             }
         });
+        if (mSelectImageList.get(position)){
+            itemCheck.setChecked(true);
+        }else{
+            itemCheck.setChecked(false);
+        }
+
         SimpleDraweeView itemImageView = (SimpleDraweeView)convertView.findViewById(R.id.ItemImage);
-        final Uri imageUri = mImageUriList.get(position);
+        final Uri imageUri = mImageThumbliList.get(position);
         itemImageView.setImageURI(imageUri);
         itemImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Uri ImageDetialUri = mImageUriList.get(position);
                 Intent intent = new Intent(mContext.getApplicationContext(), DetialImageActivity.class);
-                intent.putExtra(define.DEFINE_DETAIL_URI, imageUri.toString());
+                intent.putExtra(define.DEFINE_DETAIL_URI, ImageDetialUri.toString());
                 mContext.startActivity(intent);
             }
         });

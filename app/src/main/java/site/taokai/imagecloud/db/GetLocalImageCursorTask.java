@@ -25,7 +25,7 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
     private int Mode = 0;
     // 存放图片的Uri
     private ArrayList<Uri> ImageUriList = new ArrayList<Uri>();
-    private ArrayList<String> ImageUrlThumbnailList = new ArrayList<String>();
+    private ArrayList<Uri> ImageUrlThumbnailList = new ArrayList<Uri>();
 
     public GetLocalImageCursorTask(Context mContext, int mode){
         this.mContext = mContext;
@@ -37,34 +37,11 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
     protected Object doInBackground(Object[] params) {
         if (Mode == 0){
             GetImageList();
-        }else if (Mode == 0){
-            GetThumbliImageList();
-        }else {
-
         }
-
         return null;
     }
 
-    private void GetThumbliImageList(){
-        Uri ext_uri = MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI;
-        Cursor c = MediaStore.Images.Thumbnails.query(mContentResolver, ext_uri, null);
-        // 遍历数据库
-        int columnImageID = c.getColumnIndexOrThrow(MediaStore.Images.Thumbnails._ID);
-        int columnIndexImageID = c.getColumnIndexOrThrow(MediaStore.Images.Thumbnails.IMAGE_ID);
-        int columnIndexData = c.getColumnIndexOrThrow(MediaStore.Images.Thumbnails.DATA);
-        while (c.moveToNext() && !mExitTasksEarly){
-            long imagId = c.getLong(columnImageID);
-            ImageUriList.add(Uri.withAppendedPath(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, String.valueOf(imagId)));
-        }
-        c.close();
-        // 早退出了清空列表
-        if (mExitTasksEarly){
-            ImageUriList.clear();
-            ImageUrlThumbnailList.clear();
-        }
-    }
-
+    // 获取图片列表
     private void GetImageList(){
         Uri ext_uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         Cursor c = MediaStore.Images.Media.query(mContentResolver, ext_uri, null);
@@ -75,10 +52,17 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
         while (c.moveToNext() && !mExitTasksEarly){
             // 填充Uri列表
             long imagId = c.getLong(columnIndexID);
+            Uri ThumbUri = getThumbnailUriByImageId(imagId);
             Uri uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(imagId));
             File file = new File(getRealFilePath(ImageCloud.getmAppContext(), uri));
             // 文件存在才插入
             if (file.exists()){
+                // 缩略图的Uri获取失败的情况下还是向其中插入原图的Uri
+                if (ThumbUri == null){
+                    ImageUrlThumbnailList.add(uri);
+                }else {
+                    ImageUrlThumbnailList.add(ThumbUri);
+                }
                 ImageUriList.add(uri);
             }
             publishProgress(i);
@@ -90,6 +74,30 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
             ImageUriList.clear();
             ImageUrlThumbnailList.clear();
         }
+    }
+
+    //小图遍历字段
+    private static final String[] THUMBNAIL_STORE_IMAGE = {
+            MediaStore.Images.Thumbnails._ID,
+            MediaStore.Images.Thumbnails.DATA
+    };
+
+    // 根据iamgeId获取图片缩略图的Uri
+    private Uri getThumbnailUriByImageId(long id) {
+        Uri uri = null;
+        //获取大图的缩略图
+        Cursor cursor = ImageCloud.getmAppContext().getContentResolver().query(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
+                THUMBNAIL_STORE_IMAGE,
+                MediaStore.Images.Thumbnails.IMAGE_ID + " = ?",
+                new String[]{id + ""},
+                null);
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            int thumId = cursor.getInt(0);
+            uri = Uri.withAppendedPath(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, String.valueOf(thumId));
+        }
+        cursor.close();
+        return uri;
     }
 
     public static String getRealFilePath( final Context context, final Uri uri ) {
@@ -138,10 +146,6 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
        //  Toast.makeText(ImageCloud.getmAppContext(), ""+value, Toast.LENGTH_SHORT).show();
     }
 
-//    private String GetThumbnailPath(long imgaId){
-//        mContentResolver.query(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, )
-//    }
-
     public void setExitTasksEarly(boolean exitTasksEarly) {
         this.mExitTasksEarly = exitTasksEarly;
     }
@@ -153,7 +157,7 @@ public class GetLocalImageCursorTask extends AsyncTask<Object, Integer, Object> 
     private OnLoadImageListInterface mOnGetIamgeListInterface;
     // 接口
     public interface OnLoadImageListInterface {
-        public void OnLoadImageList(ArrayList<Uri> ImageUriList, ArrayList<String> ImagePathList);
+        public void OnLoadImageList(ArrayList<Uri> ImageUriList, ArrayList<Uri> ImagePathList);
     }
 
     class GetLocalImageCursorTask1 extends AsyncTask<String, Integer, String>{

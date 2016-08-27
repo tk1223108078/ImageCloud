@@ -5,6 +5,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
     tools:context="site.taokai.imagecloud.ui.fragment.LocalMainFragment">
+    <ImageView
+        android:id="@+id/local_popmenu_back"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#20000000"
+        android:visibility="gone">
+    </ImageView>
+    +-
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipe_container"
         android:layout_width="match_parent"
@@ -29,7 +37,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"/>
-
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/local_fab_menu"
         android:layout_width="wrap_content"
