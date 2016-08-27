@@ -8,7 +8,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
+
 import site.taokai.imagecloud.R;
+import site.taokai.imagecloud.base.CloudImageInfo;
+import site.taokai.imagecloud.network.GetCloudImageCursorTask;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -18,7 +22,7 @@ import site.taokai.imagecloud.R;
  * Use the {@link CloudMainFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class CloudMainFragment extends Fragment {
+public class CloudMainFragment extends Fragment implements GetCloudImageCursorTask.OnLoadCloudImageListInterface {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -90,6 +94,11 @@ public class CloudMainFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public void OnLoadCloudImageList(ArrayList<CloudImageInfo> CloudImageList) {
+
     }
 
     /**
